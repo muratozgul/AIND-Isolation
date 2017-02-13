@@ -7,7 +7,9 @@ You must test your agent's strength against a set of agents with known
 relative strength using tournament.py and include the results in your report.
 """
 import random
+from operator import itemgetter
 
+import algorithms
 
 class Timeout(Exception):
     """Subclass base exception for code clarity."""
@@ -37,8 +39,15 @@ def custom_score(game, player):
         The heuristic value of the current game state to the specified player.
     """
 
-    # TODO: finish this function!
-    raise NotImplementedError
+    if game.is_loser(player):
+        return float("-inf")
+
+    if game.is_winner(player):
+        return float("inf")
+
+    own_moves = len(game.get_legal_moves(player))
+    opp_moves = len(game.get_legal_moves(game.get_opponent(player)))
+    return float(own_moves - 2*opp_moves)
 
 
 class CustomPlayer:
@@ -116,9 +125,18 @@ class CustomPlayer:
             (-1, -1) if there are no available legal moves.
         """
 
+        print(game.to_string())
+
         self.time_left = time_left
 
         # TODO: finish this function!
+        selectedMove = (-1, -1)
+
+        if not legal_moves:
+            return selectedMove
+        else:
+            selectedMove = legal_moves[random.randint(0, len(legal_moves) - 1)]
+
 
         # Perform any required initializations, including selecting an initial
         # move from the game board (i.e., an opening book), or returning
@@ -129,14 +147,23 @@ class CustomPlayer:
             # here in order to avoid timeout. The try/except block will
             # automatically catch the exception raised by the search method
             # when the timer gets close to expiring
-            pass
+            print('[get_move] Try')
+            movesAndScores = []
+            for candidateMove in legal_moves:
+                # add a tuple of (move, score)
+                movesAndScores.append((candidateMove, self.minimax(game.forecast_move(candidateMove), 2, True)))
+
+            print('[get_move] movesAndScores:', movesAndScores)
+            selectedMove = max(movesAndScores, key=itemgetter(1))[0]
+            print('[get_move] selectedMove:', selectedMove)
 
         except Timeout:
             # Handle any actions required at timeout, if necessary
-            pass
+            print('[get_move] Catch Timeout')
+            selectedMove = (-1, -1)
 
         # Return the best move from the last completed search iteration
-        raise NotImplementedError
+        return selectedMove
 
     def minimax(self, game, depth, maximizing_player=True):
         """Implement the minimax search algorithm as described in the lectures.
@@ -172,8 +199,7 @@ class CustomPlayer:
         if self.time_left() < self.TIMER_THRESHOLD:
             raise Timeout()
 
-        # TODO: finish this function!
-        raise NotImplementedError
+        return algorithms.plain_minimax(self, game, depth, maximizing_player, custom_score)
 
     def alphabeta(self, game, depth, alpha=float("-inf"), beta=float("inf"), maximizing_player=True):
         """Implement minimax search with alpha-beta pruning as described in the
