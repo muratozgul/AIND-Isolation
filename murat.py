@@ -233,8 +233,8 @@ if __name__ == "__main__":
     player2 = GreedyPlayer()
     game = Board(player1, player2, 4, 4)
 
-    game.apply_move((2, 2))
     game.apply_move((0, 0))
+    game.apply_move((2, 2))
     # print(game.to_string())
     print('\n=============== NEW GAME ===============\n')
 
