@@ -159,7 +159,7 @@ class CustomPlayer:
                 selectedMove = m;
 
             signal.signal(signal.SIGALRM, safe_timout_handler)
-            timerSeconds = (time_left()-50)/1000
+            timerSeconds = (time_left()-5)/1000
             print('Setting timer to', timerSeconds)
             # signal.alarm(int((time_left()-100)/1000))
             signal.setitimer(signal.ITIMER_REAL, timerSeconds)

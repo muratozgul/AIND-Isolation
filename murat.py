@@ -231,7 +231,7 @@ if __name__ == "__main__":
 
     player1 = CustomPlayer()
     player2 = GreedyPlayer()
-    game = Board(player1, player2, 4, 4)
+    game = Board(player1, player2, 7, 7)
 
     game.apply_move((0, 0))
     game.apply_move((2, 2))

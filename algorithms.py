@@ -14,11 +14,11 @@ def max_value(player, game, depth, maxDepth, calculate_score, update_reached_dep
 
     if is_game_over(game, player):
         # print(printIndent,'[max_value] game-over! score:', score)
-        update_reached_depth(depth, 'game over')
+        update_reached_depth(depth)
         return score
     elif depth == maxDepth:
         # print(printIndent, '[max_value] max-depth! score:', score)
-        update_reached_depth(depth, 'max depth')
+        update_reached_depth(depth)
         return score
     else:
         legalMoves = game.get_legal_moves()
@@ -40,11 +40,11 @@ def min_value(player, game, depth, maxDepth, calculate_score, update_reached_dep
 
     if is_game_over(game, player):
         # print(printIndent, '[min_value] game-over! score:', score)
-        update_reached_depth(depth, 'game over')
+        update_reached_depth(depth)
         return score
     elif depth == maxDepth:
         # print(printIndent, '[min_value] max-depth, score:', score)
-        update_reached_depth(depth, 'max depth')
+        update_reached_depth(depth)
         return score
     else:
         legalMoves = game.get_legal_moves()
@@ -69,14 +69,13 @@ def iterative_deepening_minimax(player, game, legal_moves, custom_score, update_
     currentMaxDepth = 0
     reachedDepth = 0
 
-    def update_reached_depth(d, msg):
-        # print('Updating reached depth:', d, '(', msg, ')')
+    def update_reached_depth(d):
         nonlocal reachedDepth
         if (d > reachedDepth):
             reachedDepth = d
 
     while True:
-        print('[iterative_deepening_minimax] depth:', currentMaxDepth)
+        # print('[iterative_deepening_minimax] depth:', currentMaxDepth)
         movesAndScores = []
         for candidateMove in legal_moves:
             # add a tuple of (move, score)
