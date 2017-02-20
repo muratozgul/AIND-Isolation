@@ -37,20 +37,6 @@ def custom_score(game, player):
     float
         The heuristic value of the current game state to the specified player.
     """
-
-    if game.is_loser(player):
-        return float("-inf")
-
-    if game.is_winner(player):
-        return float("inf")
-
-    own_moves_len = len(game.get_legal_moves(player))
-    opp_moves_len = len(game.get_legal_moves(game.get_opponent(player)))
-    # return float(own_moves - 2*opp_moves)
-    return float(own_moves_len - 2*opp_moves_len)
-
-
-def custom_score2(game, player):
     if game.is_loser(player):
         return float("-inf")
 
@@ -93,7 +79,7 @@ class CustomPlayer:
         timer expires.
     """
 
-    def __init__(self, search_depth=3, score_fn=custom_score2,
+    def __init__(self, search_depth=3, score_fn=custom_score,
                  iterative=True, method='minimax', timeout=10.):
         self.search_depth = search_depth
         self.iterative = iterative
