@@ -1,13 +1,16 @@
 import random
 from operator import itemgetter
 import math
-
+from exceptions import Timeout
 
 def is_game_over(game, player):
     return game.is_loser(player) or game.is_winner(player)
 
 
 def max_value(player, game, depth, maxDepth, calculate_score, update_reached_depth):
+    if player.time_left() < player.TIMER_THRESHOLD:
+        raise Timeout()
+
     printIndent = (depth+1)*' '
     # print(printIndent, '[max_value] depth:', depth)
     score = calculate_score(game, player)
@@ -34,6 +37,9 @@ def max_value(player, game, depth, maxDepth, calculate_score, update_reached_dep
 
 
 def min_value(player, game, depth, maxDepth, calculate_score, update_reached_depth):
+    if player.time_left() < player.TIMER_THRESHOLD:
+        raise Timeout()
+
     printIndent = (depth+1)*' '
     # print(printIndent, '[min_value] depth:', depth)
     score = calculate_score(game, player)
@@ -59,12 +65,13 @@ def min_value(player, game, depth, maxDepth, calculate_score, update_reached_dep
         return min(scores)
 
 
-def iterative_deepening_minimax(player, game, legal_moves, custom_score, update_move):
-    selectedMove = (-1, -1)
-    if not legal_moves:
-        return selectedMove
-    else:
-        selectedMove = legal_moves[random.randint(0, len(legal_moves) - 1)]
+def iterative_deepening_minimax(player, game, custom_score, update_move):
+    legal_moves = game.get_legal_moves(player)
+    if(not legal_moves):
+        update_move((-1, -1))
+        return
+
+    selectedMove = player.get_random_move(legal_moves)
 
     currentMaxDepth = 0
     reachedDepth = 0

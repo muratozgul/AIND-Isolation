@@ -254,7 +254,8 @@ if __name__ == "__main__":
 
     # play the remainder of the game automatically -- outcome can be "illegal
     # move" or "timeout"; it should _always_ be "illegal move" in this example
-    winner, history, outcome = game.play()
+    TIME_LIMIT = 1000 #200
+    winner, history, outcome = game.play(TIME_LIMIT)
     print("\nWinner: {}\nOutcome: {}".format(winner, outcome))
     print(game.to_string())
     print("Move history:\n{!s}".format(history))

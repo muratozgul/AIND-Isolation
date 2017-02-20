@@ -9,15 +9,10 @@ relative strength using tournament.py and include the results in your report.
 import random
 import signal
 from operator import itemgetter
+from exceptions import Timeout
 
 import algorithms
 
-class Timeout(Exception):
-    """Subclass base exception for code clarity."""
-    pass
-
-class SafeTimeout(Exception):
-    pass
 
 
 def custom_score(game, player):
@@ -49,11 +44,24 @@ def custom_score(game, player):
     if game.is_winner(player):
         return float("inf")
 
-    own_moves = len(game.get_legal_moves(player))
-    opp_moves = len(game.get_legal_moves(game.get_opponent(player)))
+    own_moves_len = len(game.get_legal_moves(player))
+    opp_moves_len = len(game.get_legal_moves(game.get_opponent(player)))
     # return float(own_moves - 2*opp_moves)
-    return float(own_moves - 2*opp_moves)
+    return float(own_moves_len - 2*opp_moves_len)
 
+
+def custom_score2(game, player):
+    if game.is_loser(player):
+        return float("-inf")
+
+    if game.is_winner(player):
+        return float("inf")
+
+    own_moves = game.get_legal_moves(player)
+    opp_moves = game.get_legal_moves(game.get_opponent(player))
+
+    blocking_moves = [move for move in own_moves if move in opp_moves]
+    return float(len(blocking_moves)*100 + len(own_moves) - len(opp_moves))
 
 class CustomPlayer:
     """Game-playing agent that chooses a move using your evaluation function
@@ -85,7 +93,7 @@ class CustomPlayer:
         timer expires.
     """
 
-    def __init__(self, search_depth=3, score_fn=custom_score,
+    def __init__(self, search_depth=3, score_fn=custom_score2,
                  iterative=True, method='minimax', timeout=10.):
         self.search_depth = search_depth
         self.iterative = iterative
@@ -93,6 +101,7 @@ class CustomPlayer:
         self.method = method
         self.time_left = None
         self.TIMER_THRESHOLD = timeout
+
 
     def get_move(self, game, legal_moves, time_left):
         """Search for the best move from the available legal moves and return a
@@ -136,47 +145,35 @@ class CustomPlayer:
         # Perform any required initializations, including selecting an initial
         # move from the game board (i.e., an opening book), or returning
         # immediately if there are no legal moves
-        selectedMove = (-1, -1)
+        selectedMove = self.get_random_move(legal_moves)
 
-        if not legal_moves:
-            return selectedMove
+        # try:
+        # The search method call (alpha beta or minimax) should happen in
+        # here in order to avoid timeout. The try/except block will
+        # automatically catch the exception raised by the search method
+        # when the timer gets close to expiring
+        if(self.method == 'minimax'):
+            selectedMove = self.minimax(game, self.search_depth)
+        elif(self.method == 'alphabeta'):
+            pass
         else:
-            selectedMove = legal_moves[random.randint(0, len(legal_moves) - 1)]
+            pass
 
-        try:
-            # The search method call (alpha beta or minimax) should happen in
-            # here in order to avoid timeout. The try/except block will
-            # automatically catch the exception raised by the search method
-            # when the timer gets close to expiring
-
-            def safe_timout_handler(signum, frame):
-                print('Safe Timeout Fired')
-                raise SafeTimeout('Time almost over')
-
-            def update_move(m):
-                nonlocal selectedMove
-                # print('Updating move! Old: ', selectedMove, ' , New:', m)
-                selectedMove = m;
-
-            signal.signal(signal.SIGALRM, safe_timout_handler)
-            timerSeconds = (time_left()-5)/1000
-            print('Setting timer to', timerSeconds)
-            # signal.alarm(int((time_left()-100)/1000))
-            signal.setitimer(signal.ITIMER_REAL, timerSeconds)
-
-            algorithms.iterative_deepening_minimax(self, game, legal_moves, custom_score, update_move)
-
-        except SafeTimeout:
-            print('[get_move] Safe Timeout')
-        except Timeout:
-            # Handle any actions required at timeout, if necessary
-            print('[get_move] Timeout')
-        finally:
-            # signal.alarm(0)
-            signal.setitimer(signal.ITIMER_REAL, 0)
+        # except Timeout:
+        #     # Handle any actions required at timeout, if necessary
+        #     print('[get_move] Timeout')
 
         # Return the best move from the last completed search iteration
         return selectedMove
+
+
+    def get_random_move(self, legal_moves):
+        selectedMove = (-1, -1)
+        if not legal_moves:
+            return selectedMove
+        else:
+            return legal_moves[random.randint(0, len(legal_moves) - 1)]
+
 
     def minimax(self, game, depth, maximizing_player=True):
         """Implement the minimax search algorithm as described in the lectures.
@@ -209,11 +206,27 @@ class CustomPlayer:
                 to pass the project unit tests; you cannot call any other
                 evaluation function directly.
         """
-        if self.time_left() < self.TIMER_THRESHOLD:
-            raise Timeout()
+        safetyTime = 10;
+        selectedMove = self.get_random_move(game.get_legal_moves(self))
 
-        return algorithms.max_value(self, game, 0, depth, custom_score)
-        # return algorithms.plain_minimax(self, game, depth, maximizing_player, custom_score)
+        def update_move(m):
+            nonlocal selectedMove
+            # print('Updating move! Old: ', selectedMove, ' , New:', m)
+            selectedMove = m;
+
+        try:
+            if(self.iterative):
+                algorithms.iterative_deepening_minimax(self, game, self.score, update_move)
+            else:
+                selectedMove = algorithms.max_value(self, game, 0, depth, self.score)
+
+        except Timeout:
+            print('[minimax] Timeout')
+        except:
+            print('[minimax] Unexpected exception')
+
+        return selectedMove
+
 
     def alphabeta(self, game, depth, alpha=float("-inf"), beta=float("inf"), maximizing_player=True):
         """Implement minimax search with alpha-beta pruning as described in the
