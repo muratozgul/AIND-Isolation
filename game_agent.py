@@ -13,6 +13,19 @@ from exceptions import Timeout
 
 import algorithms
 
+def should_update_score(bestScore, candidateScore, isMaximizing):
+    if bestScore is None:
+        return True
+    elif isMaximizing and candidateScore > bestScore:
+        return True
+    elif not isMaximizing and candidateScore < bestScore:
+        return True
+    else:
+        return False
+
+
+def get_random_move(legalMoves):
+    return legalMoves[random.randint(0, len(legalMoves) - 1)]
 
 
 def custom_score(game, player):
@@ -48,6 +61,7 @@ def custom_score(game, player):
 
     blocking_moves = [move for move in own_moves if move in opp_moves]
     return float(len(blocking_moves)*100 + len(own_moves) - len(opp_moves))
+
 
 class CustomPlayer:
     """Game-playing agent that chooses a move using your evaluation function
@@ -125,40 +139,44 @@ class CustomPlayer:
             (-1, -1) if there are no available legal moves.
         """
 
-        print(game.to_string())
+        # print(game.to_string())
         self.time_left = time_left
 
         # Perform any required initializations, including selecting an initial
         # move from the game board (i.e., an opening book), or returning
         # immediately if there are no legal moves
-        selectedMove = self.get_random_move(legal_moves)
+        selectedMove = (-1, -1)
+        if not legalMoves:
+            return selectedMove
+        # in case of timeout
+        selectedMove = get_random_move(legal_moves)
 
-        # try:
-        # The search method call (alpha beta or minimax) should happen in
-        # here in order to avoid timeout. The try/except block will
-        # automatically catch the exception raised by the search method
-        # when the timer gets close to expiring
-        if(self.method == 'minimax'):
-            selectedMove = self.minimax(game, self.search_depth)
-        elif(self.method == 'alphabeta'):
-            pass
-        else:
-            pass
+        try:
+            # The search method call (alpha beta or minimax) should happen in
+            # here in order to avoid timeout. The try/except block will
+            # automatically catch the exception raised by the search method
+            # when the timer gets close to expiring
+            if(self.method == 'minimax'):
+                if self.iterative:
+                    depth = 1
+                    while True:
+                        _, selectedMove = self.minimax(game, depth)
+                        depth += 1
+                else:
+                    _, selectedMove = self.minimax(game, self.search_depth)
 
-        # except Timeout:
-        #     # Handle any actions required at timeout, if necessary
-        #     print('[get_move] Timeout')
+            elif(self.method == 'alphabeta'):
+                pass
+            else:
+                pass
+
+        except Timeout:
+            # Handle any actions required at timeout, if necessary
+            print('[get_move] Timeout')
 
         # Return the best move from the last completed search iteration
+        print('selectedMove', selectedMove)
         return selectedMove
-
-
-    def get_random_move(self, legal_moves):
-        selectedMove = (-1, -1)
-        if not legal_moves:
-            return selectedMove
-        else:
-            return legal_moves[random.randint(0, len(legal_moves) - 1)]
 
 
     def minimax(self, game, depth, maximizing_player=True):
@@ -192,26 +210,37 @@ class CustomPlayer:
                 to pass the project unit tests; you cannot call any other
                 evaluation function directly.
         """
-        safetyTime = 10;
-        selectedMove = self.get_random_move(game.get_legal_moves(self))
+        if self.time_left() < self.TIMER_THRESHOLD:
+            raise Timeout()
 
-        def update_move(m):
-            nonlocal selectedMove
-            # print('Updating move! Old: ', selectedMove, ' , New:', m)
-            selectedMove = m;
+        selfLocation = game.get_player_location(self)
 
-        try:
-            if(self.iterative):
-                algorithms.iterative_deepening_minimax(self, game, self.score, update_move)
+        # A) depth = 0 is equals to evaluating current score and current location
+        if(depth == 0):
+            return self.score(game, self), selfLocation
+
+        legalMoves = game.get_legal_moves()
+
+        # B) this is game over situation
+        if not legalMoves:
+            if maximizing_player:
+                # lose
+                return float('-inf'), selfLocation
             else:
-                selectedMove = algorithms.max_value(self, game, 0, depth, self.score)
+                # win
+                return float('inf'), selfLocation
 
-        except Timeout:
-            print('[minimax] Timeout')
-        except:
-            print('[minimax] Unexpected exception')
+        # C) we can continue
+        bestScore = None
+        bestMove = None
+        for candidateMove in legalMoves:
+            candidateScore, _ = self.minimax(game.forecast_move(candidateMove), depth-1, not maximizing_player)
+            if should_update_score(bestScore, candidateScore, maximizing_player):
+                bestScore = candidateScore
+                bestMove = candidateMove
 
-        return selectedMove
+        return bestScore, bestMove
+
 
 
     def alphabeta(self, game, depth, alpha=float("-inf"), beta=float("inf"), maximizing_player=True):

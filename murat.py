@@ -229,12 +229,14 @@ if __name__ == "__main__":
     from isolation import Board
     from game_agent import *
 
-    player1 = CustomPlayer()
+    # search_depth=3, score_fn=custom_score, iterative=True, method='minimax', timeout=10.
+    # player1 = CustomPlayer()
+    player1 = CustomPlayer(search_depth=1, iterative = False)
     player2 = GreedyPlayer()
     game = Board(player1, player2, 7, 7)
 
+    game.apply_move((2, 3))
     game.apply_move((0, 0))
-    game.apply_move((2, 2))
     # print(game.to_string())
     print('\n=============== NEW GAME ===============\n')
 
