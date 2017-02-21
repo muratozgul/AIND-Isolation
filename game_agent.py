@@ -62,7 +62,7 @@ def custom_score(game, player):
     opp_moves = game.get_legal_moves(game.get_opponent(player))
 
     blocking_moves = [move for move in own_moves if move in opp_moves]
-    return float(len(blocking_moves)*100 + len(own_moves) - 2*len(opp_moves))
+    return float(len(blocking_moves)*100 + len(own_moves) - len(opp_moves))
 
 
 class CustomPlayer:
