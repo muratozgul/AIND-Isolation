@@ -30,6 +30,48 @@ def get_random_move(legalMoves):
     return legalMoves[random.randint(0, len(legalMoves) - 1)]
 
 
+def heuristic1(game, player):
+    if game.is_loser(player):
+        return float("-inf")
+
+    if game.is_winner(player):
+        return float("inf")
+
+    own_moves = game.get_legal_moves(player)
+    opp_moves = game.get_legal_moves(game.get_opponent(player))
+
+    blocking_moves = [move for move in own_moves if move in opp_moves]
+    return float(len(blocking_moves)*100 + len(own_moves) - len(opp_moves))
+
+
+def heuristic2(game, player):
+    if game.is_loser(player):
+        return float("-inf")
+
+    if game.is_winner(player):
+        return float("inf")
+
+    own_moves = game.get_legal_moves(player)
+    opp_moves = game.get_legal_moves(game.get_opponent(player))
+
+    blocking_moves = [move for move in own_moves if move in opp_moves]
+    return float(len(blocking_moves)*100 + len(own_moves) - 2*len(opp_moves))
+
+
+def heuristic3(game, player):
+    if game.is_loser(player):
+        return float("-inf")
+
+    if game.is_winner(player):
+        return float("inf")
+
+    own_moves = game.get_legal_moves(player)
+    opp_moves = game.get_legal_moves(game.get_opponent(player))
+
+    blocking_moves = [move for move in own_moves if move in opp_moves]
+    return float(len(blocking_moves)*100 - 4*len(opp_moves))
+
+
 def custom_score(game, player):
     """Calculate the heuristic value of a game state from the point of view
     of the given player.
@@ -52,17 +94,7 @@ def custom_score(game, player):
     float
         The heuristic value of the current game state to the specified player.
     """
-    if game.is_loser(player):
-        return float("-inf")
-
-    if game.is_winner(player):
-        return float("inf")
-
-    own_moves = game.get_legal_moves(player)
-    opp_moves = game.get_legal_moves(game.get_opponent(player))
-
-    blocking_moves = [move for move in own_moves if move in opp_moves]
-    return float(len(blocking_moves)*100 + len(own_moves) - len(opp_moves))
+    return heuristic2(game, player)
 
 
 class CustomPlayer:
