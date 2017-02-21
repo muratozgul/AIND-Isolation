@@ -7,11 +7,9 @@ You must test your agent's strength against a set of agents with known
 relative strength using tournament.py and include the results in your report.
 """
 import random
-import signal
 from operator import itemgetter
 from exceptions import Timeout
 
-import algorithms
 
 def should_update_score(bestScore, candidateScore, isMaximizing):
     if bestScore is None:
@@ -22,6 +20,10 @@ def should_update_score(bestScore, candidateScore, isMaximizing):
         return True
     else:
         return False
+
+
+def should_prune(score, alpha, beta, isMaximizing):
+    return (isMaximizing is True and score >= beta) or (isMaximizing is False and score <= alpha)
 
 
 def get_random_move(legalMoves):
@@ -60,7 +62,7 @@ def custom_score(game, player):
     opp_moves = game.get_legal_moves(game.get_opponent(player))
 
     blocking_moves = [move for move in own_moves if move in opp_moves]
-    return float(len(blocking_moves)*100 + len(own_moves) - len(opp_moves))
+    return float(len(blocking_moves)*100 + len(own_moves) - 2*len(opp_moves))
 
 
 class CustomPlayer:
@@ -146,7 +148,7 @@ class CustomPlayer:
         # move from the game board (i.e., an opening book), or returning
         # immediately if there are no legal moves
         selectedMove = (-1, -1)
-        if not legalMoves:
+        if not legal_moves:
             return selectedMove
         # in case of timeout
         selectedMove = get_random_move(legal_moves)
@@ -166,16 +168,23 @@ class CustomPlayer:
                     _, selectedMove = self.minimax(game, self.search_depth)
 
             elif(self.method == 'alphabeta'):
-                pass
+                if self.iterative:
+                    depth = 1
+                    while True:
+                        _, selectedMove = self.alphabeta(game, depth)
+                        depth += 1
+                else:
+                    _, selectedMove = self.alphabeta(game, self.search_depth)
             else:
                 pass
 
         except Timeout:
+            pass
             # Handle any actions required at timeout, if necessary
-            print('[get_move] Timeout')
+            # print('[get_move] Timeout')
 
         # Return the best move from the last completed search iteration
-        print('selectedMove', selectedMove)
+        # print('selectedMove', selectedMove)
         return selectedMove
 
 
@@ -284,5 +293,40 @@ class CustomPlayer:
         if self.time_left() < self.TIMER_THRESHOLD:
             raise Timeout()
 
-        # TODO: finish this function!
-        raise NotImplementedError
+        selfLocation = game.get_player_location(self)
+
+        # A) depth = 0 is equals to evaluating current score and current location
+        if(depth == 0):
+            return self.score(game, self), selfLocation
+
+        legalMoves = game.get_legal_moves()
+
+        # B) this is game over situation
+        if not legalMoves:
+            if maximizing_player:
+                # lose
+                return float('-inf'), selfLocation
+            else:
+                # win
+                return float('inf'), selfLocation
+
+        # C) we can continue
+        bestScore = None
+        bestMove = None
+        for candidateMove in legalMoves:
+            candidateScore, _ = self.alphabeta(game.forecast_move(candidateMove), depth-1, alpha, beta, not maximizing_player)
+
+            if should_update_score(bestScore, candidateScore, maximizing_player):
+                bestScore = candidateScore
+                bestMove = candidateMove
+
+            if should_prune(bestScore, alpha, beta, maximizing_player):
+                break
+
+            if maximizing_player is True and candidateScore > alpha:
+                alpha = candidateScore
+
+            if maximizing_player is False and candidateScore < beta:
+                beta = candidateScore
+
+        return bestScore, bestMove
