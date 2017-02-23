@@ -41,8 +41,12 @@ def heuristic1(game, player):
     opp_moves = game.get_legal_moves(game.get_opponent(player))
 
     blocking_moves = [move for move in own_moves if move in opp_moves]
-    return float(len(blocking_moves)*100 + len(own_moves) - len(opp_moves))
-
+    if(game.active_player == player):
+        # "evade" blocking moves
+        return float(len(blocking_moves)*100 + len(own_moves) - len(opp_moves))
+    else:
+        # "evade" blocking moves
+        return float(-len(blocking_moves)*100 + len(own_moves) - len(opp_moves))
 
 def heuristic2(game, player):
     if game.is_loser(player):
@@ -55,7 +59,12 @@ def heuristic2(game, player):
     opp_moves = game.get_legal_moves(game.get_opponent(player))
 
     blocking_moves = [move for move in own_moves if move in opp_moves]
-    return float(len(blocking_moves)*100 + len(own_moves) - 2*len(opp_moves))
+    if(game.active_player == player):
+        # "evade" blocking moves
+        return float(len(blocking_moves)*100 + len(own_moves) - 1.5*len(opp_moves))
+    else:
+        # "evade" blocking moves
+        return float(-len(blocking_moves)*100 + len(own_moves) - 1.5*len(opp_moves))
 
 
 def heuristic3(game, player):
@@ -69,7 +78,7 @@ def heuristic3(game, player):
     opp_moves = game.get_legal_moves(game.get_opponent(player))
 
     blocking_moves = [move for move in own_moves if move in opp_moves]
-    return float(len(blocking_moves)*100 - 4*len(opp_moves))
+    return float(len(own_moves) - 2*len(opp_moves))
 
 
 def custom_score(game, player):
@@ -94,7 +103,7 @@ def custom_score(game, player):
     float
         The heuristic value of the current game state to the specified player.
     """
-    return heuristic1(game, player)
+    return heuristic2(game, player)
 
 
 class CustomPlayer:
